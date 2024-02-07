@@ -5,25 +5,37 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.navigation.NavController
 import uz.itteacher.myquziapp11_05_2.models.OptionDto
 import uz.itteacher.myquziapp11_05_2.models.QuizDto
+import uz.itteacher.myquziapp11_05_2.navigation.Screens
 
 private const val TAG = "QuizViewModel"
 
 class QuizViewModel : ViewModel() {
     private val quizModel = QuizModel()
-    private val quizList = questionList()
+    var quizList = mutableListOf<QuizDto>(QuizDto("1", "", mutableListOf(OptionDto("", ""), OptionDto("", ""), OptionDto("", ""), OptionDto("", ""), )))
+
+    init {
+        quizModel.getQuizList1 {
+            if (quizList[0].id == "1") {
+                quizList.clear()
+                _quiz.value = it
+            }
+            quizList.add(it)
+            _numberQuetion.value = _numberQuetion.value!!.plus(1)
+        }
+    }
 
     val count = quizList.size
-    var result = 0
     val time = "3"
 
     private val f = 1f / count
 
-    private var _progress = MutableLiveData(f)
+    private var _progress = MutableLiveData(0f)
     var progress: LiveData<Float> = _progress
 
-    private var _numberQuetion = MutableLiveData(1)
+    private var _numberQuetion = MutableLiveData(0)
     var numberQuetion: LiveData<Int> = _numberQuetion
 
     private var _timeprogress = MutableLiveData(time)
@@ -32,44 +44,64 @@ class QuizViewModel : ViewModel() {
     private var _status = MutableLiveData(false)
     var status: LiveData<Boolean> = _status
 
-    private var _quiz = MutableLiveData(quizList[0])
+    private var _quiz = MutableLiveData(quizList[_numberQuetion.value!!])
     var quiz: LiveData<QuizDto> = _quiz
 
-    fun onProgress(choice: String) {
-        if (_numberQuetion.value!! <= count)
-            if (checkAnswer(choice, _quiz.value!!)) {
-                result++
-            }
-        if (count > _numberQuetion.value!!) {
+    private val _showDialog = MutableLiveData(false)
+    val showDialog: LiveData<Boolean> = _showDialog
 
-            _numberQuetion.value = _numberQuetion.value?.plus(1)
-            _progress.value = _progress.value?.plus(f)
-            _quiz.value = quizList[_numberQuetion.value?.minus(1)!!]
+    fun onOpenDialogClicked() {
+        _showDialog.value = true
+    }
+
+    fun onDialogConfirm(navController: NavController) {
+        _showDialog.value = false
+        navController.navigate(Screens.Result.route)
+
+    }
+
+    fun onDialogDismiss() {
+        _showDialog.value = false
+    }
+
+    fun onProgress() {
+        _quiz.value?.options!!.forEach {
+            if (it.status) return
+        }
+        _progress.value = _progress.value?.plus(f)
+    }
+
+    fun checkQuestion(choice: String) {
+        onProgress()
+        _quiz.value?.options!!.forEach {
+            it.status = choice == it.optionText
         }
     }
 
-    private fun checkAnswer(choice: String, quizDto: QuizDto): Boolean {
-        var f = false
-        for (i in quizList) {
-            if (i == quizDto)
-                for (j in i.options) {
-                    if (!j.status && j.optionText == choice) {
-                        j.status = true
-                        if (j.correctAnswer && j.index != 0) {
-                            j.index = 0
-                            f= true
-                        }
-                    }else {
-                        if (j.status && j.correctAnswer){
-                            j.index = -1
-                            result--
-                        }
-                        j.status = false
-                    }
-
-                }
+    fun nextQuestion() {
+        if (_numberQuetion.value!! < count - 1) {
+            _numberQuetion.value = _numberQuetion.value?.plus(1)
+            _quiz.value = quizList[_numberQuetion.value!!]
         }
-        return f
+    }
+
+    fun prevQuestion() {
+        if (_numberQuetion.value!! > 0) {
+            _numberQuetion.value = _numberQuetion.value?.minus(1)
+            _quiz.value = quizList[_numberQuetion.value!!]
+        }
+    }
+
+    fun result():Int {
+        var result = 0
+        quizList.forEach { it ->
+            it.options.forEach {
+                if (it.status && it.correctAnswer) {
+                    result++
+                }
+            }
+        }
+        return result
     }
 
     fun startTime() {
@@ -89,16 +121,7 @@ class QuizViewModel : ViewModel() {
         }.start()
     }
 
-    fun prevQuestion(){
-        if (1 < _numberQuetion.value!!) {
-            _numberQuetion.value = _numberQuetion.value?.minus(1)
-            _quiz.value = quizList[_numberQuetion.value?.minus(1)!!]
-        }
-    }
-
-
-    private fun questionList(): List<QuizDto> {
-        return quizModel.getQuizList()
-
-    }
+//    private fun questionList(): List<QuizDto> {
+//        return quizModel.getQuizList1()
+//    }
 }

@@ -39,29 +39,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import uz.itteacher.myquziapp11_05_2.R
 import uz.itteacher.myquziapp11_05_2.ui.theme.Green
 import uz.itteacher.myquziapp11_05_2.ui.theme.MainBg
 import uz.itteacher.myquziapp11_05_2.ui.theme.OptionBg
 import uz.itteacher.myquziapp11_05_2.ui.theme.TextColor
+import uz.itteacher.myquziapp11_05_2.util.MyDialog
+import javax.security.auth.callback.Callback
 
 @OptIn(ExperimentalMaterial3Api::class)
 private const val TAG = "QuizView"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuizView(viewModel: QuizViewModel) {
+fun QuizView(viewModel: QuizViewModel, navController: NavController) {
     val progress = viewModel.progress.observeAsState().value
     val numberQuetion = viewModel.numberQuetion.observeAsState().value
     val timeprogress = viewModel.timeprogress.observeAsState().value
     val status = viewModel.status.observeAsState().value
     val quiz = viewModel.quiz.observeAsState().value
 
+    val showDialogState = viewModel.showDialog.observeAsState().value
 
 
 
-    if (status != null && status){
-        Toast.makeText(LocalContext.current, "Vaqt tugadi", Toast.LENGTH_SHORT).show()
+
+    if (status != null && status) {
+        viewModel.onOpenDialogClicked()
+        if (showDialogState != null) {
+            MyDialog(
+                show = showDialogState,
+                text = "Vaqt tugadi",
+                onDismiss = { viewModel.onDialogConfirm(navController) },
+                onConfirm = { viewModel.onDialogConfirm(navController) }
+            )
+        }
     }
+
+
+
 
     Box(
         modifier = Modifier
@@ -81,7 +98,7 @@ fun QuizView(viewModel: QuizViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.arrow_back),
+                    painter = painterResource(id = R.drawable.back),
                     contentDescription = "back",
                     modifier = Modifier.clickable {
                         viewModel.prevQuestion()
@@ -126,10 +143,12 @@ fun QuizView(viewModel: QuizViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "$numberQuetion",
+                    Text(
+                        text = "${numberQuetion?.plus(1)}",
                         color = Green,
                         fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold)
+                        fontWeight = FontWeight.Bold
+                    )
                     Text(
                         text = "/${viewModel.count}",
                         color = OptionBg,
@@ -166,23 +185,25 @@ fun QuizView(viewModel: QuizViewModel) {
             LazyColumn {
                 if (quiz != null) {
                     items(quiz.options.size) {
-                        var color:Color = OptionBg
-                        if (quiz.options[it].status){
-                            color = Green
-                        }
+
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = color),
+                            colors = CardDefaults.cardColors(
+                                containerColor =
+                                if (quiz.options[it].status)
+                                    Green
+                                else
+                                    OptionBg
+                            ),
                             onClick = {
-                                viewModel.onProgress(quiz.options[it].optionText)
-                                Log.d(TAG, "QuizView: ${viewModel.result}")
+                                viewModel.checkQuestion(quiz.options[it].optionText)
                             },
                         ) {
                             Text(
-                                text = quiz.options[it].optionText ,
+                                text = quiz.options[it].optionText,
                                 Modifier.padding(20.dp),
                                 color = Color.White,
                                 fontSize = 20.sp,
@@ -192,6 +213,43 @@ fun QuizView(viewModel: QuizViewModel) {
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(15.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(painter = painterResource(id = R.drawable.arrow_back),
+                    contentDescription = "back",
+                    modifier = Modifier.clickable {
+                        viewModel.prevQuestion()
+                    })
+                Icon(painter = painterResource(id = R.drawable.arrow_forward),
+                    contentDescription = "back",
+                    modifier = Modifier.clickable {
+                        viewModel.nextQuestion()
+                    })
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            if (progress == 1f){
+                if (showDialogState != null) {
+                    MyDialog(
+                        show = showDialogState,
+                        text = "Testni yakunlashni hohlaysizmi?",
+                        onDismiss = viewModel::onDialogDismiss,
+                        onConfirm = { viewModel.onDialogConfirm(navController) }
+                    )
+                }
+                Button(onClick = {
+                    viewModel.onOpenDialogClicked()
+                }) {
+                    Text(text = "Yakunlash")
+                }
+            }
+
         }
     }
 }
+

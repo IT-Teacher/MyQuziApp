@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
+import uz.itteacher.myquziapp11_05_2.navigation.SetNavGraph
 import uz.itteacher.myquziapp11_05_2.screens.quiz.QuizView
 import uz.itteacher.myquziapp11_05_2.screens.quiz.QuizViewModel
 import uz.itteacher.myquziapp11_05_2.ui.theme.MyQuziApp11052Theme
@@ -37,10 +39,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel = QuizViewModel()
-                    viewModel.startTime()
-                    QuizView(viewModel = viewModel)
-
+                    var navController = rememberNavController()
+                    SetNavGraph(navController = navController)
                 }
             }
         }
