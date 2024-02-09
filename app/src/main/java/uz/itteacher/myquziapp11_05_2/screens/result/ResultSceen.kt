@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import uz.itteacher.myquziapp11_05_2.models.QuizDto
-import uz.itteacher.myquziapp11_05_2.screens.quiz.QuizView
 import uz.itteacher.myquziapp11_05_2.screens.quiz.QuizViewModel
 import uz.itteacher.myquziapp11_05_2.ui.theme.ErrorBg
 import uz.itteacher.myquziapp11_05_2.ui.theme.Green
@@ -32,6 +29,7 @@ import uz.itteacher.myquziapp11_05_2.ui.theme.TextColor
 
 @Composable
 fun ResultScreen(viewModel: QuizViewModel, navController: NavController) {
+//    Log.d("TAG", viewModel.quizList.toString())
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -66,8 +64,8 @@ fun ResultScreen(viewModel: QuizViewModel, navController: NavController) {
 
             LazyColumn{
                 items(viewModel.count) {
-                    val v = viewModel.quizList[0]
-                    ViewQuiz(v)
+                    val v = viewModel.quizList[it]
+                    ViewQuiz(v!!)
                 }
             }
         }
@@ -83,7 +81,9 @@ fun ViewQuiz(quizDto: QuizDto){
         color = TextColor
     )
     Spacer(modifier = Modifier.height(8.dp))
-    LazyColumn(modifier = Modifier.fillMaxWidth().height(250.dp)) {
+    LazyColumn(modifier = Modifier
+        .fillMaxWidth()
+        .height(250.dp)) {
         items(quizDto.options.size) {
             var color = OptionBg
             if (quizDto.options[it].status){

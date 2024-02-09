@@ -14,23 +14,22 @@ private const val TAG = "QuizViewModel"
 
 class QuizViewModel : ViewModel() {
     private val quizModel = QuizModel()
-    var quizList = mutableListOf<QuizDto>(QuizDto("1", "", mutableListOf(OptionDto("", ""), OptionDto("", ""), OptionDto("", ""), OptionDto("", ""), )))
+    var quizList = mutableListOf<QuizDto?>(null)
+    var count = quizList.size  //1
 
     init {
-        quizModel.getQuizList1 {
-            if (quizList[0].id == "1") {
+        quizModel.getQuizList {
+            if (quizList[0] == null) {
                 quizList.clear()
                 _quiz.value = it
+                count--//0
             }
             quizList.add(it)
-            _numberQuetion.value = _numberQuetion.value!!.plus(1)
+            count++
         }
     }
 
-    val count = quizList.size
     val time = "3"
-
-    private val f = 1f / count
 
     private var _progress = MutableLiveData(0f)
     var progress: LiveData<Float> = _progress
@@ -45,7 +44,7 @@ class QuizViewModel : ViewModel() {
     var status: LiveData<Boolean> = _status
 
     private var _quiz = MutableLiveData(quizList[_numberQuetion.value!!])
-    var quiz: LiveData<QuizDto> = _quiz
+    var quiz: LiveData<QuizDto?> = _quiz
 
     private val _showDialog = MutableLiveData(false)
     val showDialog: LiveData<Boolean> = _showDialog
@@ -68,7 +67,7 @@ class QuizViewModel : ViewModel() {
         _quiz.value?.options!!.forEach {
             if (it.status) return
         }
-        _progress.value = _progress.value?.plus(f)
+        _progress.value = _progress.value?.plus(1f / count)
     }
 
     fun checkQuestion(choice: String) {
@@ -95,7 +94,7 @@ class QuizViewModel : ViewModel() {
     fun result():Int {
         var result = 0
         quizList.forEach { it ->
-            it.options.forEach {
+            it!!.options.forEach {
                 if (it.status && it.correctAnswer) {
                     result++
                 }
@@ -117,11 +116,6 @@ class QuizViewModel : ViewModel() {
             override fun onFinish() {
                 _status.value = true
             }
-
         }.start()
     }
-
-//    private fun questionList(): List<QuizDto> {
-//        return quizModel.getQuizList1()
-//    }
 }

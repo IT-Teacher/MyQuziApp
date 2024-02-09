@@ -9,83 +9,33 @@ import javax.security.auth.callback.Callback
 
 private const val TAG = "QuizModel"
 class QuizModel {
-    var quizList = mutableListOf<QuizDto>()
     private val db = Firebase.firestore
-
-
-    init {
-
-        val optionList = mutableListOf<OptionDto>()
-        optionList.add(OptionDto(optionText = "9"))
-        optionList.add(OptionDto(optionText = "8", correctAnswer = true))
-        optionList.add(OptionDto(optionText = "11"))
-        optionList.add(OptionDto(optionText = "7"))
-        quizList.add(QuizDto(questionText = "2 + 6 = ?", options = optionList))
-//        val optionList1 = mutableListOf<OptionDto>()
-//        optionList1.add(OptionDto(optionText = "32"))
-//        optionList1.add(OptionDto(optionText = "33", correctAnswer = true))
-//        optionList1.add(OptionDto(optionText = "23"))
-//        optionList1.add(OptionDto(optionText = "44"))
-//        quizList.add(QuizDto(questionText = "11 * 3 = ?", options = optionList1))
-//        val optionList2 = mutableListOf<OptionDto>()
-//        optionList2.add(OptionDto(optionText = "54"))
-//        optionList2.add(OptionDto(optionText = "55", correctAnswer = true))
-//        optionList2.add(OptionDto(optionText = "50"))
-//        optionList2.add(OptionDto(optionText = "56"))
-//        quizList.add(QuizDto(questionText = "32 + 23 = ?", options = optionList2))
-//        val optionList3 = mutableListOf<OptionDto>()
-//        optionList3.add(OptionDto(optionText = "10"))
-//        optionList3.add(OptionDto(optionText = "9", correctAnswer = true))
-//        optionList3.add(OptionDto(optionText = "7"))
-//        optionList3.add(OptionDto(optionText = "8"))
-//        quizList.add(QuizDto(questionText = "6 + 3 = ?", options = optionList3))
-//        val optionList4 = mutableListOf<OptionDto>()
-//        optionList4.add(OptionDto(optionText = "32"))
-//        optionList4.add(OptionDto(optionText = "33", correctAnswer = true))
-//        optionList4.add(OptionDto(optionText = "23"))
-//        optionList4.add(OptionDto(optionText = "44"))
-//        quizList.add(QuizDto(questionText = "11 + 22 = ?", options = optionList4))
-    }
-
-    fun getQuizList1(callback:(QuizDto) ->Unit) {
+    fun getQuizList(callback:(QuizDto) ->Unit) {
         val reference = db.collection("QuizDto")
         val quizDtoList = mutableListOf<QuizDto>()
 
-        val optionsList = mutableListOf<OptionDto>()
-        optionsList.add(OptionDto(optionText = "9"))
-        optionsList.add(OptionDto(optionText = "8", correctAnswer = true))
-        optionsList.add(OptionDto(optionText = "11"))
-        optionsList.add(OptionDto(optionText = "7"))
-
-        quizDtoList.add(QuizDto(questionText = "2 + 6 = ?", options = optionsList))
-
         reference.get().addOnSuccessListener { result1 ->
             for (quizDto in result1) {
+                val optionList: MutableList<OptionDto> = mutableListOf()
+                val quizText = quizDto["QuizText"] as String
+                val quiz = QuizDto(quizDto.id, quizText, optionList)
                 reference.document(quizDto.id).collection("OptionDto")
                     .get()
                     .addOnSuccessListener { result ->
-                        val quizText = quizDto["QuizText"] as String
-                        val optionList: MutableList<OptionDto> = mutableListOf()
                         for (optionDto in result) {
                             val optionText = optionDto["OptionText"] as String
                             val status = optionDto["status"] as Boolean
                             val correctAnswer = optionDto["correctAnswer"] as Boolean
-                            optionList.add(
-                                OptionDto(
-                                    optionDto.id,
-                                    optionText,
-                                    status,
-                                    correctAnswer
-                                )
-                            )
+                            val option=OptionDto(optionDto.id, optionText, correctAnswer, status)
+                            quiz.options.add(option)
                         }
-                        val quiz = QuizDto(quizDto.id, quizText, optionList)
-                        quizDtoList.add(quiz)
 
                         callback(quiz)
-
                     }
+//                Log.d(TAG, "${quiz.options}")
+
             }
+
         }
     }
 }
